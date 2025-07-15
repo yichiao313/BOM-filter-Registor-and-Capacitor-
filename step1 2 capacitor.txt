@@ -1,0 +1,35 @@
+import pandas as pd
+
+# === Step 1: 讀取 Geo_Diversity.xlsm 中 PCBA 工作表 ===
+file_path = "Geo_Diversity.xlsm"
+df_pcba = pd.read_excel(file_path, sheet_name="PCBA")
+
+# === Step 2: 篩選 C欄為 "Capacitor"，並擷取 E欄（PN）與 K欄（Description）===
+# C欄 → 'LIST.2'
+# E欄 → 'Unnamed: 4'
+# K欄 → 'TEXT.4'
+df_cap = df_pcba[df_pcba['LIST.2'].str.contains("capacitor", case=False, na=False)][['LIST.2', 'Unnamed: 4', 'TEXT.4']]
+df_cap.columns = ['Type', 'PN', 'Description']
+
+# === Step 3: 讀取 EE Change 對照表 ===
+checklist_path = "DCR0020430_checklist_0625.xlsx"
+df_ee_change = pd.read_excel(checklist_path, sheet_name="EE Change")
+df_mapping = df_ee_change[['Changed list', 'Unnamed: 1']].dropna()
+df_mapping.columns = ['Old_PN', 'New_PN']
+
+# === Step 4: 定義轉換函數（倒數第4碼為S則進行料號替換）===
+def replace_if_S(pn):
+    if isinstance(pn, str) and len(pn) >= 4 and pn[-4] == 'S':
+        match = df_mapping[df_mapping['Old_PN'] == pn]
+        if not match.empty:
+            return match['New_PN'].values[0]
+    return pn
+
+# === Step 5: 應用轉換邏輯，新增欄位 Updated_PN ===
+df_cap['Updated_PN'] = df_cap['PN'].apply(replace_if_S)
+
+# === Step 6: 輸出成 Excel ===
+output_path = "step2_capacitors.xlsx"
+df_cap.to_excel(output_path, index=False)
+
+print(f"✅ 已成功產出：{output_path}")

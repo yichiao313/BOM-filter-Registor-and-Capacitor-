@@ -1,0 +1,26 @@
+import pandas as pd
+
+# === Step 1: 讀取 step1.xlsx ===
+step1_path = "step1.xlsx"
+df_step1 = pd.read_excel(step1_path)
+
+# === Step 2: 讀取 EE Change 對照表 ===
+checklist_path = "DCR0020430_checklist_0625.xlsx"
+df_ee_change = pd.read_excel(checklist_path, sheet_name="EE Change")
+
+# 清理對應欄位，移除空值
+df_mapping = df_ee_change[['Changed list', 'Unnamed: 1']].dropna()
+df_mapping.columns = ['Old_PN', 'New_PN']
+
+# === Step 3: 定義替換邏輯 ===
+def replace_if_S(pn):
+    if isinstance(pn, str) and len(pn) >= 4 and pn[-4] == 'S':
+        match = df_mapping[df_mapping['Old_PN'] == pn]
+        if not match.empty:
+            return match['New_PN'].values[0]
+    return pn
+
+# === Step 4: 執行替換並建立新欄位 ===
+df_step1['Updated_PN'] = df_step1['PN'].apply(replace_if_S)
+
+# === Step 5:

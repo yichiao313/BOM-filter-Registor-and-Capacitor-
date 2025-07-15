@@ -1,0 +1,20 @@
+import pandas as pd
+
+# === Step 1: 讀取 Geo_Diversity.xlsm 中 PCBA 工作表 ===
+file_path = "Geo_Diversity.xlsm"
+df_pcba = pd.read_excel(file_path, sheet_name="PCBA")
+
+# === Step 2: 對應欄位名稱 ===
+# C欄 → LIST.2（Type）
+# E欄 → Unnamed: 4（PN）
+# K欄 → TEXT.4（Description）
+
+# === Step 3: 篩選 C欄為 'resistor'（不區分大小寫），取出 E 與 K 欄 ===
+df_resistor = df_pcba[df_pcba['LIST.2'].str.contains("resistor", case=False, na=False)][['LIST.2', 'Unnamed: 4', 'TEXT.4']]
+df_resistor.columns = ['Type', 'PN', 'Description']  # 重命名欄位
+
+# === Step 4: 輸出為 step1.xlsx ===
+output_path = "step1.xlsx"
+df_resistor.to_excel(output_path, index=False)
+
+print(f"✅ 已成功產出：{output_path}")
